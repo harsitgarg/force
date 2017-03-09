@@ -1625,3 +1625,41 @@ func oauthCallbackHtml() string {
   </body>
 </html>`
 }
+
+func (f *Force) generateTestClass(generatorClass string, sourceClass string, jsonData string) (err error) {
+
+	url := fmt.Sprintf("%s/services/data/%s/query/?q=Select+Id+From+ApexClass+Where+Name+=+'%s'", f.Credentials.InstanceUrl, apiVersion, generatorClass)
+	body, err := f.httpGet(url)
+	if err != nil {
+		return
+	}
+	var result ForceQueryResult
+	json.Unmarshal(body, &result)
+	
+	if result.Records[0] == nil{
+		fmt.Println("Enter the correct Generator class Name")
+		return
+	}else{
+		url := fmt.Sprintf("%s/services/data/%s/query/?q=Select+Id+From+ApexClass+Where+Name+=+'%s'", f.Credentials.InstanceUrl, apiVersion, sourceClass)
+		body, err := f.httpGet(url)
+		if err != nil {
+			return
+		}
+		json.Unmarshal(body, &result)
+		if result.Records[0] == nil{
+			fmt.Println("Enter the correct source class Name")
+			return
+		}
+	}
+	
+	string codetoexec = generatorClass + "clsObj = new "+generatorClass+"("+sourceClass+","+jsonData+");\\n"
+	err := force.Partner.ExecuteAnonymous(string(codetoexec))
+	if err != nil {
+		ErrorAndExit(err.Error())
+	}else{
+		fmt.Println("Test Class generated successfully...")
+	}
+	
+	
+	
+}
